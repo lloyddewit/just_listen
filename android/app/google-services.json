@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665039344443",
+    "project_id": "just-listen-7b7e1",
+    "storage_bucket": "just-listen-7b7e1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665039344443:android:ae178ebec203678519dd1e",
+        "android_client_info": {
+          "package_name": "com.example.just_listen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDr9fpteG1UcTMgbhOa8NphL_7UXTzg2xo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
