@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart'
-    hide EmailAuthProvider; // Add this import
-import 'package:firebase_ui_auth/firebase_ui_auth.dart'; // And this import
+    hide EmailAuthProvider; // hide this import to avoid name conflicts with the one from firebase_ui_auth
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
 
@@ -62,6 +62,6 @@ class AuthGate extends StatelessWidget {
 
         return const HomeScreen();
       },
-    ); // To here.
+    );
   }
 }
