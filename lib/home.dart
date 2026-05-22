@@ -1,5 +1,6 @@
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:just_listen/user_profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -15,28 +16,7 @@ class HomeScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProfileScreen(
-                    actions: [
-                      SignedOutAction((context) {
-                        Navigator.of(context).pop();
-                      }),
-                    ],
-                    appBar: AppBar(title: const Text('User Profile')),
-                    avatar: const CircleAvatar(
-                      radius: 56,
-                      child: Icon(Icons.person, size: 56),
-                    ),
-                    children: [
-                      const Divider(),
-                      Padding(
-                        padding: const EdgeInsets.all(2),
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: Image.asset('assets/flutterfire_300x.png'),
-                        ),
-                      ),
-                    ],
-                  ),
+                  builder: (context) => const UserProfileScreen(),
                 ),
               );
             },
