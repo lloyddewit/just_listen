@@ -1,6 +1,6 @@
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:just_listen/user_profile_screen.dart';
+import 'user_profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,6 +24,33 @@ class HomeScreen extends StatelessWidget {
         ],
         automaticallyImplyLeading: false,
       ),
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          'Made with ❤️ by the FlutterFire team',
+          textAlign: TextAlign.center,
+        ),
+      ),
+      bottomSheet: Container(
+        color: Colors.lightGreen,
+        height: 50,
+        child: const Center(
+          child: Text(
+            'This is a bottom sheet',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+      persistentFooterButtons: [
+        TextButton(
+          onPressed: () {},
+          child: const Text('Persistent Footer Button 1'),
+        ),
+        TextButton(
+          onPressed: () {},
+          child: const Text('Persistent Footer Button 2'),
+        ),
+      ],
       body: Center(
         child: Column(
           children: [
