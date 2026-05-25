@@ -1,4 +1,3 @@
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'user_profile_screen.dart';
 
@@ -25,14 +24,36 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Tough Talk'),
         automaticallyImplyLeading: false,
       ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(width: 250, child: Image.asset('assets/dash.png')),
-            Text('Welcome!', style: Theme.of(context).textTheme.displaySmall),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: const [
+                    Text('Welcome to Tough Talk!'),
+                    SizedBox(height: 8),
+                    Text('Your safe space to share and grow.'),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            const ElevatedButton(
+              onPressed: null,
+              child: Text('Start a New Conversation'),
+            ),
+
+            const SizedBox(height: 16),
           ],
         ),
       ),
+
       bottomNavigationBar: NavigationBar(
         //selectedIndex: _selectedIndex,
         // onDestinationSelected: _onItemTapped,
