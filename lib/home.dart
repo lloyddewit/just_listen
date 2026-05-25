@@ -11,7 +11,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.settings),
             onPressed: () {
               Navigator.push(
                 context,
@@ -22,43 +22,37 @@ class HomeScreen extends StatelessWidget {
             },
           ),
         ],
+        title: const Text('Tough Talk'),
         automaticallyImplyLeading: false,
       ),
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.all(8.0),
-        child: Text(
-          'Made with ❤️ by the FlutterFire team',
-          textAlign: TextAlign.center,
-        ),
-      ),
-      bottomSheet: Container(
-        color: Colors.lightGreen,
-        height: 50,
-        child: const Center(
-          child: Text(
-            'This is a bottom sheet',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ),
-      persistentFooterButtons: [
-        TextButton(
-          onPressed: () {},
-          child: const Text('Persistent Footer Button 1'),
-        ),
-        TextButton(
-          onPressed: () {},
-          child: const Text('Persistent Footer Button 2'),
-        ),
-      ],
       body: Center(
         child: Column(
           children: [
             SizedBox(width: 250, child: Image.asset('assets/dash.png')),
             Text('Welcome!', style: Theme.of(context).textTheme.displaySmall),
-            const SignOutButton(),
           ],
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        //selectedIndex: _selectedIndex,
+        // onDestinationSelected: _onItemTapped,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            tooltip: 'Go back to start screen',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart),
+            label: 'Progress',
+            tooltip: 'See your progress',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.history),
+            label: 'History',
+            tooltip: 'See your previous activities',
+          ),
+        ],
       ),
     );
   }

@@ -26,6 +26,7 @@ class UserProfileScreen extends StatelessWidget {
             child: Image.asset('assets/flutterfire_300x.png'),
           ),
         ),
+        const SignOutButton(),
       ],
     );
   }
