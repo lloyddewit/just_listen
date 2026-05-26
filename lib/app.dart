@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'auth_gate.dart';
+import 'features/authorization/auth_gate.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.clientId});
