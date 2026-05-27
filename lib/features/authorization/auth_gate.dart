@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart'
-    hide EmailAuthProvider; // hide this import to avoid name conflicts with the one from firebase_ui_auth
+    hide
+        EmailAuthProvider; // hide this import to avoid name conflicts with the one from firebase_ui_auth
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
@@ -20,23 +21,17 @@ class AuthGate extends StatelessWidget {
           return SignInScreen(
             providers: [
               EmailAuthProvider(),
-              GoogleProvider(clientId: "665039344443-o68vn8jboke2oebnn62elc72jv53308t.apps.googleusercontent.com"),
+              GoogleProvider(
+                clientId:
+                    "665039344443-o68vn8jboke2oebnn62elc72jv53308t.apps.googleusercontent.com",
+              ),
             ],
-            headerBuilder: (context, constraints, shrinkOffset) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Image.asset('assets/flutterfire_300x.png'),
-                ),
-              );
-            },
             subtitleBuilder: (context, action) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: action == AuthAction.signIn
-                    ? const Text('Welcome to FlutterFire, please sign in!')
-                    : const Text('Welcome to Flutterfire, please sign up!'),
+                    ? const Text('Welcome, please sign in!')
+                    : const Text('Welcome, please sign up!'),
               );
             },
             footerBuilder: (context, action) {
@@ -45,15 +40,6 @@ class AuthGate extends StatelessWidget {
                 child: Text(
                   'By signing in, you agree to our terms and conditions.',
                   style: TextStyle(color: Colors.grey),
-                ),
-              );
-            },
-            sideBuilder: (context, shrinkOffset) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Image.asset('assets/flutterfire_300x.png'),
                 ),
               );
             },
