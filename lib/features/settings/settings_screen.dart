@@ -1,4 +1,4 @@
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -6,16 +6,27 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProfileScreen(
-      actions: [
-        SignedOutAction((context) {
-          Navigator.of(context).pop();
-        }),
-      ],
-      appBar: AppBar(title: const Text('Settings')),
-      avatar: const CircleAvatar(
-        radius: 56,
-        child: Icon(Icons.person, size: 56),
+    final user = FirebaseAuth.instance.currentUser;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: Text(user?.displayName ?? 'No name'),
+            subtitle: Text(user?.email ?? 'No email'),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Sign Out'),
+            onTap: () => {
+              FirebaseAuth.instance.signOut(),
+              Navigator.of(context).pop(),
+            },
+          ),
+        ],
       ),
     );
   }
