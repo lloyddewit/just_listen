@@ -3,7 +3,9 @@ import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'app.dart';
 
-const clientId = 'YOUR_CLIENT_ID';
+// It's OK to make this public.
+//See https://stackoverflow.com/questions/37482366/is-it-safe-to-expose-firebase-apikey-to-the-public/37484053#37484053
+const clientId = '665039344443-o68vn8jboke2oebnn62elc72jv53308t.apps.googleusercontent.com';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

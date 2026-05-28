@@ -22,8 +22,7 @@ class AuthGate extends StatelessWidget {
             providers: [
               EmailAuthProvider(),
               GoogleProvider(
-                clientId:
-                    "665039344443-o68vn8jboke2oebnn62elc72jv53308t.apps.googleusercontent.com",
+                clientId: clientId,
               ),
             ],
             subtitleBuilder: (context, action) {
