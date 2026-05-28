@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'auth_gate.dart';
+import 'features/authorization/auth_gate.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key, required this.clientId});
@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
       home: AuthGate(clientId: clientId),
     );
