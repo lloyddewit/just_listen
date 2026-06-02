@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-final GlobalKey<_MessagesState> _messagesKey = GlobalKey<_MessagesState>();
+final GlobalKey<_MessageListState> _messagesKey =
+    GlobalKey<_MessageListState>();
 
 class ActivityScreen extends StatelessWidget {
   const ActivityScreen({super.key});
@@ -13,13 +14,13 @@ class ActivityScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: Messages(key: _messagesKey)),
+            Expanded(child: _MessageList(key: _messagesKey)),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Response(
-                onSubmit: (text) {
-                  _messagesKey.currentState?.addItem(text);
+              child: _UserResponse(
+                onSubmit: (newMessage) {
+                  _messagesKey.currentState?.addMessageToList(newMessage);
                 },
               ),
             ),
@@ -30,62 +31,60 @@ class ActivityScreen extends StatelessWidget {
   }
 }
 
-class Messages extends StatefulWidget {
-  const Messages({super.key});
+class _MessageList extends StatefulWidget {
+  const _MessageList({super.key});
 
   @override
-  State<Messages> createState() => _MessagesState();
+  State<_MessageList> createState() => _MessageListState();
 }
 
-class _MessagesState extends State<Messages> {
-  final List<String> items = [
-    'Alpha',
-    'Bravo',
-    'Charlie',
-    'Delta',
-    'Echo',
-    'Foxtrot',
-    'Golf',
-    'Hotel',
-    'India',
-    'Juliet',
-    'Alpha',
-    'Bravo',
-    'Charlie',
-    'Delta',
-    'Echo',
-    'Foxtrot',
-    'Golf',
-    'Hotel',
-    'India',
-    'Juliet',
-  ];
+class _MessageListState extends State<_MessageList> {
+  final List<String> messageList = [];
+  final ScrollController _scrollController = ScrollController();
 
-  void addItem(String item) {
-    setState(() => items.add(item));
+  void addMessageToList(String newMessage) {
+    setState(() => messageList.add(newMessage));
+
+    // Wait until the frame is rendered, then scroll to the bottom.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: items.length,
+      controller: _scrollController,
+      itemCount: messageList.length,
       itemBuilder: (context, index) {
-        return ListTile(title: Text(items[index]));
+        return ListTile(title: Text(messageList[index]));
       },
     );
   }
 }
 
-class Response extends StatefulWidget {
-  const Response({super.key, required this.onSubmit});
+class _UserResponse extends StatefulWidget {
+  const _UserResponse({required this.onSubmit});
 
   final ValueChanged<String> onSubmit;
 
   @override
-  State<Response> createState() => _ResponseState();
+  State<_UserResponse> createState() => _UserResponseState();
 }
 
-class _ResponseState extends State<Response> {
+class _UserResponseState extends State<_UserResponse> {
   final _controller = TextEditingController();
 
   void _submit() {
