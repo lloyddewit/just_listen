@@ -1,51 +1,18 @@
 import 'package:flutter/material.dart';
 
-final GlobalKey<_MessageListState> _messagesKey =
-    GlobalKey<_MessageListState>();
-
-class ActivityScreen extends StatelessWidget {
+// Option: Lift state to ActivityScreen (StatefulWidget)
+class ActivityScreen extends StatefulWidget {
   const ActivityScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(leading: const BackButton()),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: _MessageList(key: _messagesKey)),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: _UserResponse(
-                onSubmit: (newMessage) {
-                  _messagesKey.currentState?.addMessageToList(newMessage);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<ActivityScreen> createState() => _ActivityScreenState();
 }
 
-class _MessageList extends StatefulWidget {
-  const _MessageList({super.key});
+class _ActivityScreenState extends State<ActivityScreen> {
+  final List<String> _messages = [];
+  final _scrollController = ScrollController();
 
-  @override
-  State<_MessageList> createState() => _MessageListState();
-}
-
-class _MessageListState extends State<_MessageList> {
-  final List<String> messageList = [];
-  final ScrollController _scrollController = ScrollController();
-
-  void addMessageToList(String newMessage) {
-    setState(() => messageList.add(newMessage));
-
-    // Wait until the frame is rendered, then scroll to the bottom.
+  void _addMessage(String msg) {
+    setState(() => _messages.add(msg));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -65,12 +32,26 @@ class _MessageListState extends State<_MessageList> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: messageList.length,
-      itemBuilder: (context, index) {
-        return ListTile(title: Text(messageList[index]));
-      },
+    return Scaffold(
+      appBar: AppBar(leading: const BackButton()),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: _messages.length,
+                itemBuilder: (context, index) =>
+                    ListTile(title: Text(_messages[index])),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _UserResponse(onSubmit: _addMessage),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -86,18 +67,21 @@ class _UserResponse extends StatefulWidget {
 
 class _UserResponseState extends State<_UserResponse> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
 
   void _submit() {
     final text = _controller.text.trim();
     if (text.isNotEmpty) {
       widget.onSubmit(text);
       _controller.clear();
+      _focusNode.requestFocus();
     }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -108,6 +92,7 @@ class _UserResponseState extends State<_UserResponse> {
         Expanded(
           child: TextField(
             controller: _controller,
+            focusNode: _focusNode,
             decoration: const InputDecoration(hintText: 'Type something...'),
             onSubmitted: (_) => _submit(),
           ),
