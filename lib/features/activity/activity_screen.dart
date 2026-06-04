@@ -10,11 +10,13 @@ class ActivityScreen extends StatefulWidget {
 
 class _ActivityScreenState extends State<ActivityScreen> {
   final List<_Message> _messages = [_Message('Question1?', isUser: false)];
-  final _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   void _addMessage(String msg) {
-    setState(() => _messages.add(_Message(msg, isUser: true)));
-    _messages.add(_Message('Echo: $msg', isUser: false));
+    setState(() {
+      _messages.add(_Message(msg, isUser: true));
+      _messages.add(_Message('Echo: $msg', isUser: false));
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -35,7 +37,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(leading: const BackButton()),
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: const Text('Activity'),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -65,7 +70,7 @@ class _Message {
   final String text;
   final bool isUser;
 
-  _Message(this.text, {this.isUser = true});
+  const _Message(this.text, {this.isUser = true});
 }
 
 class _UserResponse extends StatefulWidget {
