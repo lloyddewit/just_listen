@@ -9,13 +9,15 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
-  final List<_Message> _messages = [_Message('Question1?', isUser: false)];
+  final List<_Message> _messages = [
+    _Message(text: 'Question1?', isUser: false),
+  ];
   final ScrollController _scrollController = ScrollController();
 
   void _addMessage(String msg) {
     setState(() {
-      _messages.add(_Message(msg, isUser: true));
-      _messages.add(_Message('Echo: $msg', isUser: false));
+      _messages.add(_Message(text: msg, isUser: true));
+      _messages.add(_Message(text: 'Echo: $msg', isUser: false));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -48,10 +50,19 @@ class _ActivityScreenState extends State<ActivityScreen> {
               child: ListView.builder(
                 controller: _scrollController,
                 itemCount: _messages.length,
-                itemBuilder: (context, index) => BubbleSpecialOne(
-                  tail: true,
-                  text: _messages[index].text,
-                  isSender: _messages[index].isUser,
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2,
+                    horizontal: 8,
+                  ),
+                  child: BubbleSpecialOne(
+                    tail: true,
+                    text: _messages[index].text,
+                    isSender: _messages[index].isUser,
+                    color: _messages[index].isUser
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  ),
                 ),
               ),
             ),
@@ -70,7 +81,7 @@ class _Message {
   final String text;
   final bool isUser;
 
-  const _Message(this.text, {this.isUser = true});
+  const _Message({required this.text, this.isUser = true});
 }
 
 class _UserResponse extends StatefulWidget {
