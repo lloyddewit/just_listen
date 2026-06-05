@@ -1,5 +1,7 @@
 import 'package:chat_bubbles/chat_bubbles.dart';
+import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:timer_widget/timer_widget.dart';
 
 // Option: Lift state to ActivityScreen (StatefulWidget)
 class ActivityScreen extends StatefulWidget {
@@ -13,6 +15,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
     _Message(text: 'Question1?', isUser: false),
   ];
   final ScrollController _scrollController = ScrollController();
+  final CountDownController _countDownController = CountDownController();
+  bool _showCircularTimer = true;
 
   void _addMessage(String msg) {
     setState(() {
@@ -28,6 +32,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
         );
       }
     });
+  }
+
+  void restartTimer() {
+    setState(() {
+      _showCircularTimer = true;
+    });
+    try {
+      _countDownController.restart();
+    } catch (_) {
+      // ignore: avoid_print
+      print('CountDownController.restart() failed or not available');
+    }
   }
 
   @override
@@ -66,9 +82,69 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ),
               ),
             ),
+            if (_showCircularTimer)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    CircularCountDownTimer(
+                      duration: 3,
+                      initialDuration: 0,
+                      controller: _countDownController,
+                      width: MediaQuery.of(context).size.width / 14,
+                      height: MediaQuery.of(context).size.height / 14,
+                      ringColor: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.onSecondaryContainer,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                      strokeWidth: 7.0,
+                      strokeCap: StrokeCap.round,
+                      textStyle: TextStyle(
+                        fontSize: 18.0,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      textFormat: CountdownTextFormat.S,
+                      isReverse: true,
+                      isReverseAnimation: true,
+                      isTimerTextShown: true,
+                      autoStart: true,
+                      onComplete: () {
+                        setState(() => _showCircularTimer = false);
+                      },
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: () {
+                        _countDownController.pause();
+                        setState(() => _showCircularTimer = false);
+                      },
+                      child: const Text('Start now'),
+                    ),
+                  ],
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: _UserResponse(onSubmit: _addMessage),
+              child: _UserResponse(
+                onSubmit: _addMessage,
+                restartTimer: restartTimer,
+              ),
             ),
           ],
         ),
@@ -85,9 +161,10 @@ class _Message {
 }
 
 class _UserResponse extends StatefulWidget {
-  const _UserResponse({required this.onSubmit});
+  const _UserResponse({required this.onSubmit, required this.restartTimer});
 
   final ValueChanged<String> onSubmit;
+  final VoidCallback restartTimer;
 
   @override
   State<_UserResponse> createState() => _UserResponseState();
@@ -101,6 +178,12 @@ class _UserResponseState extends State<_UserResponse> {
     final text = _controller.text.trim();
     if (text.isNotEmpty) {
       widget.onSubmit(text);
+      try {
+        widget.restartTimer();
+      } catch (_) {
+        // ignore: avoid_print
+        print('restartTimer callback failed');
+      }
       _controller.clear();
       _focusNode.requestFocus();
     }
