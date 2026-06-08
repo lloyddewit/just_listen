@@ -16,14 +16,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
     _Message(text: 'Question1?', isUser: false),
   ];
   final ScrollController _scrollController = ScrollController();
-  late CountDownController _countDownController;
+  final CountDownController _countDownController = CountDownController();
   bool _isWaiting = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _countDownController = CountDownController();
-  }
 
   void _addMessage(String msg) {
     setState(() {
@@ -44,14 +38,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
   void restartTimer() {
     setState(() {
       _isWaiting = !_isWaiting;
-      _countDownController = CountDownController();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _countDownController.restart(duration: _isWaiting ? 3 : 10);
     });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _countDownController.dispose();
     super.dispose();
   }
 
@@ -87,51 +83,63 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ),
               ),
             ),
-            Container(
+            SizedBox(height: 8),
+            SizedBox(
               height: 64,
-              child: CircularCountDownTimer(
-                duration: _isWaiting ? 3 : 10,
-                controller: _countDownController,
-                width: timerSize,
-                height: timerSize,
-                ringColor: Theme.of(context).colorScheme.secondaryContainer,
-                fillColor: Theme.of(context).colorScheme.onSecondaryContainer,
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                strokeWidth: 7.0,
-                strokeCap: StrokeCap.round,
-                textStyle: TextStyle(
-                  fontSize: 32.0,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: CircularCountDownTimer(
+                  duration: _isWaiting ? 3 : 10,
+                  controller: _countDownController,
+                  width: timerSize,
+                  height: timerSize,
+                  ringColor: Theme.of(context).colorScheme.secondaryContainer,
+                  fillColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer,
+                  strokeWidth: 7.0,
+                  strokeCap: StrokeCap.round,
+                  textStyle: TextStyle(
+                    fontSize: 32.0,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  textFormat: CountdownTextFormat.S,
+                  isReverse: true,
+                  isReverseAnimation: true,
+                  isTimerTextShown: true,
+                  autoStart: true,
+                  onComplete: () {
+                    restartTimer();
+                  },
                 ),
-                textAlign: TextAlign.center,
-                textFormat: CountdownTextFormat.S,
-                isReverse: true,
-                isReverseAnimation: true,
-                isTimerTextShown: true,
-                autoStart: true,
-                onComplete: () {
-                  restartTimer();
-                },
               ),
             ),
-            Container(
+            SizedBox(
               height: 64,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(32),
+                    ),
                   ),
+                  onPressed: () {
+                    restartTimer();
+                  },
+                  child: _isWaiting
+                      ? const Text('Start talking now')
+                      : const Text('Stop talking now'),
                 ),
-                onPressed: () {
-                  restartTimer();
-                },
-                child: _isWaiting
-                    ? const Text('Stop talking now')
-                    : const Text('Start talking now'),
               ),
             ),
           ],
