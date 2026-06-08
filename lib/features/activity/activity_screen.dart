@@ -1,7 +1,8 @@
+import 'dart:math';
+
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
-import 'package:timer_widget/timer_widget.dart';
 
 // Option: Lift state to ActivityScreen (StatefulWidget)
 class ActivityScreen extends StatefulWidget {
@@ -52,6 +53,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double timerSize = max(100, MediaQuery.of(context).size.width / 14);
+
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
@@ -87,10 +90,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       children: [
                         CircularCountDownTimer(
                           duration: 3,
-                          initialDuration: 0,
                           controller: _countDownController,
-                          width: MediaQuery.of(context).size.width / 14,
-                          height: MediaQuery.of(context).size.height / 14,
+                          width: timerSize,
+                          height: timerSize,
                           ringColor: Theme.of(
                             context,
                           ).colorScheme.secondaryContainer,
