@@ -19,10 +19,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
   final CountDownController _countDownController = CountDownController();
   bool _isWaiting = true;
 
-  void _addMessage(String msg) {
+  void _addMessage(String msg, bool isUser) {
     setState(() {
-      _messages.add(_Message(text: msg, isUser: true));
-      _messages.add(_Message(text: 'Echo: $msg', isUser: false));
+      _messages.add(_Message(text: msg, isUser: isUser));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -58,8 +57,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double timerSize = max(48, MediaQuery.of(context).size.width / 14);
-
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
@@ -73,10 +70,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 controller: _scrollController,
                 itemCount: _messages.length,
                 itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 2,
-                    horizontal: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 2),
                   child: BubbleSpecialOne(
                     tail: true,
                     text: _messages[index].text,
@@ -90,84 +84,100 @@ class _ActivityScreenState extends State<ActivityScreen> {
             ),
             SizedBox(height: 8),
             SizedBox(
-              height: 64,
+              height: 96,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: CircularCountDownTimer(
-                  duration: _isWaiting ? 3 : 10,
-                  controller: _countDownController,
-                  width: timerSize,
-                  height: timerSize,
-                  ringColor: Theme.of(context).colorScheme.secondaryContainer,
-                  fillColor: Theme.of(context).colorScheme.onSecondaryContainer,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.primaryContainer,
-                  strokeWidth: 7.0,
-                  strokeCap: StrokeCap.round,
-                  textStyle: TextStyle(
-                    fontSize: 32.0,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  textFormat: CountdownTextFormat.S,
-                  isReverse: true,
-                  isReverseAnimation: true,
-                  isTimerTextShown: true,
-                  autoStart: true,
-                  onComplete: () {
-                    restartTimer();
-                  },
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6.0),
+                      child: Text(
+                        _isWaiting ? 'Get ready to speak ...' : 'Speak now!',
+                        style: TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                    CircularCountDownTimer(
+                      duration: _isWaiting ? 3 : 10,
+                      controller: _countDownController,
+                      width: 48,
+                      height: 48,
+                      ringColor: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer,
+                      fillColor: Theme.of(
+                        context,
+                      ).colorScheme.onSecondaryContainer,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                      strokeWidth: 7.0,
+                      strokeCap: StrokeCap.round,
+                      textStyle: TextStyle(
+                        fontSize: 32.0,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      textFormat: CountdownTextFormat.S,
+                      isReverse: true,
+                      isReverseAnimation: true,
+                      isTimerTextShown: true,
+                      autoStart: true,
+                      onComplete: () {
+                        if (!_isWaiting) {
+                          _addMessage('User response.', true);
+                          _addMessage('Question?', false);
+                        }
+                        restartTimer();
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
             SizedBox(
-              height: 64,
+              height: 90,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-
-                child: _isWaiting
-                    ? ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(32),
-                          ),
-                        ),
-                        onPressed: () {
-                          restartTimer();
-                        },
-                        child: const Text('Start talking now'),
-                      )
-                    : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          shape: CircleBorder(),
-                        ),
-                        onPressed: () {
-                          restartTimer();
-                        },
-                        child: const Icon(Icons.stop, size: 32.0),
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isWaiting
+                            ? Colors.green.shade800
+                            : Colors.red.shade800,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        minimumSize: const Size(62, 62),
+                        shape: const CircleBorder(),
                       ),
+                      onPressed: () {
+                        if (!_isWaiting) {
+                          _addMessage('User response.', true);
+                          _addMessage('Question?', false);
+                        }
+                        restartTimer();
+                      },
+                      child: _isWaiting
+                          ? const Icon(Icons.arrow_right, size: 40.0)
+                          : const Icon(Icons.stop, size: 32.0),
+                    ),
+                    Text(
+                      _isWaiting ? 'Start now' : 'Stop now',
+                      style: TextStyle(
+                        fontSize: 14.0,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
