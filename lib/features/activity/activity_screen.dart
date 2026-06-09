@@ -39,9 +39,14 @@ class _ActivityScreenState extends State<ActivityScreen> {
     setState(() {
       _isWaiting = !_isWaiting;
     });
+
+    // Capture the duration at call time, not callback time (i.e. outside addPostFrameCallback)
+    // See: https://github.com/lloyddewit/just_listen/pull/5 09/06/26 comment.
+    final duration = _isWaiting ? 3 : 10;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _countDownController.restart(duration: _isWaiting ? 3 : 10);
+      _countDownController.restart(duration: duration);
     });
   }
 
