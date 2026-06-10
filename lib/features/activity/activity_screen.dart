@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:progress_bar_countdown/progress_bar_countdown.dart';
 
 // Option: Lift state to ActivityScreen (StatefulWidget)
 class ActivityScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
   ];
   final ScrollController _scrollController = ScrollController();
   final CountDownController _countDownController = CountDownController();
+  final ProgressBarCountdownController _progressBarController =
+      ProgressBarCountdownController();
   bool _isWaiting = true;
 
   void _addMessage(String msg, bool isUser) {
@@ -34,7 +37,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
   }
 
-  void restartTimer() {
+  void _restartTimer() {
     setState(() {
       _isWaiting = !_isWaiting;
     });
@@ -46,6 +49,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _countDownController.restart(duration: duration);
+      _progressBarController.reset(duration: Duration(seconds: duration));
+      _progressBarController.start();
     });
   }
 
@@ -54,7 +59,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       _addMessage('User response.', true);
       _addMessage('Question?', false);
     }
-    restartTimer();
+    _restartTimer();
   }
 
   @override
@@ -65,6 +70,15 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Color progressBarLightColor = Theme.of(
+      context,
+    ).colorScheme.secondaryContainer;
+
+    final hslColor = HSLColor.fromColor(progressBarLightColor);
+    Color progressBarDarkColor = hslColor
+        .withLightness((hslColor.lightness - .45).clamp(0.0, 1.0))
+        .toColor();
+
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
@@ -119,6 +133,39 @@ class _ActivityScreenState extends State<ActivityScreen> {
               ],
             ),
             Padding(
+              padding: const EdgeInsets.only(
+                top: 9,
+                bottom: 12.0,
+                left: 12.0,
+                right: 12.0,
+              ),
+              child: ProgressBarCountdown(
+                hideText: true,
+                initialDuration: Duration(seconds: _isWaiting ? 3 : 10),
+                progressColor: _isWaiting
+                    ? progressBarDarkColor
+                    : progressBarLightColor,
+                progressBackgroundColor: _isWaiting
+                    ? progressBarLightColor
+                    : progressBarDarkColor,
+                initialTextColor: _isWaiting
+                    ? progressBarLightColor
+                    : progressBarDarkColor,
+                revealedTextColor: _isWaiting
+                    ? progressBarDarkColor
+                    : progressBarLightColor,
+                height: 8.0,
+                countdownDirection: _isWaiting
+                    ? ProgressBarCountdownAlignment.left
+                    : ProgressBarCountdownAlignment.right,
+                controller: _progressBarController,
+                autoStart: true,
+                onComplete: () {
+                  _toggleWaitSpeakMode(_isWaiting);
+                },
+              ),
+            ),
+            Padding(
               padding: const EdgeInsets.only(top: 9, bottom: 12.0),
               child: CircularCountDownTimer(
                 duration: _isWaiting ? 3 : 10,
@@ -142,7 +189,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 isTimerTextShown: true,
                 autoStart: true,
                 onComplete: () {
-                  _toggleWaitSpeakMode(_isWaiting);
+                  // _toggleWaitSpeakMode(_isWaiting);
                 },
               ),
             ),
