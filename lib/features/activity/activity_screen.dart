@@ -49,6 +49,14 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
   }
 
+  void _toggleWaitSpeakMode(bool isWaiting) {
+    if (!isWaiting) {
+      _addMessage('User response.', true);
+      _addMessage('Question?', false);
+    }
+    restartTimer();
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -130,11 +138,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       isTimerTextShown: true,
                       autoStart: true,
                       onComplete: () {
-                        if (!_isWaiting) {
-                          _addMessage('User response.', true);
-                          _addMessage('Question?', false);
-                        }
-                        restartTimer();
+                        _toggleWaitSpeakMode(_isWaiting);
                       },
                     ),
                   ],
@@ -159,11 +163,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         shape: const CircleBorder(),
                       ),
                       onPressed: () {
-                        if (!_isWaiting) {
-                          _addMessage('User response.', true);
-                          _addMessage('Question?', false);
-                        }
-                        restartTimer();
+                        _toggleWaitSpeakMode(_isWaiting);
                       },
                       child: _isWaiting
                           ? const Icon(Icons.arrow_right, size: 40.0)
