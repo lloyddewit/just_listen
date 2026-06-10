@@ -90,16 +90,36 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ),
               ),
             ),
-            Text(
-              _isWaiting ? 'Get ready to speak ...' : 'Speak now!',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _isWaiting
+                    ? Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..scaleByDouble(-1.0, 1.0, 1.0, 1.0),
+                        child: const Icon(
+                          Icons.psychology_outlined,
+                          size: 24.0,
+                        ),
+                      )
+                    : Icon(
+                        Icons.record_voice_over,
+                        size: 24.0,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                Text(
+                  _isWaiting ? ' Get ready to speak ...' : '  Speak now!',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ],
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 6, bottom: 12.0),
+              padding: const EdgeInsets.only(top: 9, bottom: 12.0),
               child: CircularCountDownTimer(
                 duration: _isWaiting ? 3 : 10,
                 controller: _countDownController,
