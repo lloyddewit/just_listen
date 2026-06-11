@@ -506,14 +506,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
-  timer_widget:
-    dependency: "direct main"
-    description:
-      name: timer_widget
-      sha256: c4adf147a6c807586789b3b11251b87836afe12a60c3b8e613f9069ed67283c9
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   typed_data:
     dependency: transitive
     description:

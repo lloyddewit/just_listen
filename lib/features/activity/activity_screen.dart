@@ -124,6 +124,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   void dispose() {
+    _progressBarController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
