@@ -1,6 +1,7 @@
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:flutter/material.dart';
 import 'package:progress_bar_countdown/progress_bar_countdown.dart';
+import 'package:record/record.dart';
 
 // Option: Lift state to ActivityScreen (StatefulWidget)
 class ActivityScreen extends StatefulWidget {
@@ -17,6 +18,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
       ProgressBarCountdownController();
   final ScrollController _scrollController = ScrollController();
   bool _isWaiting = true;
+
+  final recorder = AudioRecorder();
+
+  // Recording config optimized for speech recognition
+  final recordConfig = RecordConfig(
+    encoder: AudioEncoder.wav, // WAV or FLAC preferred by APIs
+    sampleRate: 16000, // 16kHz is standard for speech APIs
+    numChannels: 1, // Mono
+    autoGain: true,
+    echoCancel: true,
+    noiseSuppress: true,
+  );
+
+  // TODO: Specify the path where the audio file should be saved.
+  final audioFilePath = 'myRecording.wav';
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +143,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     // Commented out because ProgressBarCountdownController does not implement dispose()
     //_progressBarController.dispose();
     _scrollController.dispose();
+    recorder.dispose();
     super.dispose();
   }
 
@@ -161,8 +178,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
   }
 
-  void _toggleWaitSpeakMode(bool isWaiting) {
-    if (!isWaiting) {
+  Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
+    if (isWaiting) {
+      if (await recorder.hasPermission()) {
+        await recorder.start(recordConfig, path: audioFilePath);
+      } else {
+        print('TODOMicrophone permission denied. Cannot start recording.');
+      }
+    } else {
+      final path = await recorder.stop();
+      print('Recording stopped. File saved to: $path');
       _addMessage('User response.', true);
       _addMessage('Question?', false);
     }
