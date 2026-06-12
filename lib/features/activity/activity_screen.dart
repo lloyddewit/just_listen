@@ -15,6 +15,8 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
+  String _audioFilePath = "";
+
   final List<_Message> _messages = [
     _Message(text: 'Question1?', isUser: false),
   ];
@@ -23,10 +25,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isWaiting = true;
 
-  final recorder = AudioRecorder();
+  final _recorder = AudioRecorder();
 
   // Recording config optimized for speech recognition
-  final recordConfig = RecordConfig(
+  final _recordConfig = RecordConfig(
     encoder: AudioEncoder.wav, // WAV or FLAC preferred by APIs
     sampleRate: 16000, // 16kHz is standard for speech APIs
     numChannels: 1, // Mono
@@ -34,8 +36,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
     echoCancel: true,
     noiseSuppress: true,
   );
-
-  late String audioFilePath; // Will be set when recording starts
 
   @override
   Widget build(BuildContext context) {
@@ -143,20 +143,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Future<void> dispose() async {
-    if (audioFilePath != null) {
-      print(
-        'TODO Warning: Found temporary audio file, will delete: $audioFilePath',
-      );
-      final file = File(audioFilePath);
-      if (await file.exists()) {
-        await file.delete();
-      }
-    }
+    _deleteFile(_audioFilePath);
 
     // Commented out because ProgressBarCountdownController does not implement dispose()
     //_progressBarController.dispose();
+
     _scrollController.dispose();
-    recorder.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -173,6 +166,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
         );
       }
     });
+  }
+
+  void _deleteFile(String path) async {
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+    }
   }
 
   Future<String> _getTempRecordingPath() async {
@@ -203,29 +203,23 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
     if (isWaiting) {
-      if (await recorder.hasPermission()) {
-        audioFilePath = await _getTempRecordingPath();
-        await recorder.start(recordConfig, path: audioFilePath);
+      if (await _recorder.hasPermission()) {
+        _audioFilePath = await _getTempRecordingPath();
+        await _recorder.start(_recordConfig, path: _audioFilePath);
       } else {
         print('TODO Microphone permission denied. Cannot start recording.');
       }
     } else {
-      final path = await recorder.stop();
+      final path = await _recorder.stop();
       if (path == null) {
         print('TODO Recording failed to stop properly. No file path returned.');
         return;
-      } else if (path != audioFilePath) {
+      } else if (path != _audioFilePath) {
         print('TODO Warning: Recorded file path does not match expected path.');
-        final file = File(audioFilePath);
-        if (await file.exists()) {
-          await file.delete();
-        }
+        _deleteFile(_audioFilePath);
       }
       _addMessage('User response in: $path', true);
-      final file = File(path);
-      if (await file.exists()) {
-        await file.delete();
-      }
+      _deleteFile(path);
       _addMessage('Question?', false);
     }
     _restartTimer();
