@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:chat_bubbles/chat_bubbles.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:progress_bar_countdown/progress_bar_countdown.dart';
 import 'package:record/record.dart';
+import 'package:uuid/uuid.dart';
 
 // Option: Lift state to ActivityScreen (StatefulWidget)
 class ActivityScreen extends StatefulWidget {
@@ -31,8 +35,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     noiseSuppress: true,
   );
 
-  // TODO: Specify the path where the audio file should be saved.
-  final audioFilePath = 'myRecording.wav';
+  late String audioFilePath; // Will be set when recording starts
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +142,17 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
+    if (audioFilePath != null) {
+      print(
+        'TODO Warning: Found temporary audio file, will delete: $audioFilePath',
+      );
+      final file = File(audioFilePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+
     // Commented out because ProgressBarCountdownController does not implement dispose()
     //_progressBarController.dispose();
     _scrollController.dispose();
@@ -162,6 +175,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
   }
 
+  Future<String> _getTempRecordingPath() async {
+    if (kIsWeb) {
+      // Web: return a placeholder or use memory-based approach
+      throw UnsupportedError('File recording not supported on web');
+    }
+
+    final tempDir = await getTemporaryDirectory();
+    return '${tempDir.path}/voice_recording_${Uuid().v4()}.wav';
+  }
+
   void _restartTimer() {
     setState(() {
       _isWaiting = !_isWaiting;
@@ -181,14 +204,28 @@ class _ActivityScreenState extends State<ActivityScreen> {
   Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
     if (isWaiting) {
       if (await recorder.hasPermission()) {
+        audioFilePath = await _getTempRecordingPath();
         await recorder.start(recordConfig, path: audioFilePath);
       } else {
-        print('TODOMicrophone permission denied. Cannot start recording.');
+        print('TODO Microphone permission denied. Cannot start recording.');
       }
     } else {
       final path = await recorder.stop();
-      print('Recording stopped. File saved to: $path');
-      _addMessage('User response.', true);
+      if (path == null) {
+        print('TODO Recording failed to stop properly. No file path returned.');
+        return;
+      } else if (path != audioFilePath) {
+        print('TODO Warning: Recorded file path does not match expected path.');
+        final file = File(audioFilePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+      _addMessage('User response in: $path', true);
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
       _addMessage('Question?', false);
     }
     _restartTimer();

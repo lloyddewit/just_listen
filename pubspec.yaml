@@ -39,8 +39,10 @@ dependencies:
   firebase_ui_auth: ^3.0.1
   firebase_ui_oauth_google: ^2.0.1
   google_sign_in: ^6.3.0
+  path_provider: ^2.1.5
   progress_bar_countdown: ^0.0.3
   record: ^7.1.0
+  uuid: ^4.5.3  # for unique filenames
 
 dev_dependencies:
   flutter_test:
