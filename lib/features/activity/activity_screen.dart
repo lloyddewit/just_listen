@@ -154,6 +154,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   void _addMessage(String msg, bool isUser) {
+    if (!mounted) return;
     setState(() {
       _messages.add(_Message(text: msg, isUser: isUser));
     });
@@ -186,6 +187,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   void _restartTimer() {
+    if (!mounted) return;
     setState(() {
       _isWaiting = !_isWaiting;
     });
@@ -201,22 +203,52 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
   }
 
+  Future<void> _showErrorAndReturnToStartScreen(String message) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false, // force explicit confirmation
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Something went wrong'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // close dialog
+              Navigator.of(dialogContext).popUntil(
+                // return to start
+                ModalRoute.withName('/'),
+              );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
     if (isWaiting) {
       if (await _recorder.hasPermission()) {
         _audioFilePath = await _getTempRecordingPath();
         await _recorder.start(_recordConfig, path: _audioFilePath);
       } else {
-        print('TODO Microphone permission denied. Cannot start recording.');
+        _showErrorAndReturnToStartScreen(
+          'Microphone permission denied. Cannot start recording.',
+        );
       }
     } else {
       final path = await _recorder.stop();
       if (path == null) {
-        print('TODO Recording failed to stop properly. No file path returned.');
-        return;
+        _showErrorAndReturnToStartScreen(
+          'Recording failed to stop properly. No file path returned.',
+        );
+        return; // never called but this line need to prevent compiler warning about path being potentially null
       } else if (path != _audioFilePath) {
-        print('TODO Warning: Recorded file path does not match expected path.');
         _deleteFile(_audioFilePath);
+        _showErrorAndReturnToStartScreen(
+          'Warning: Recorded file path does not match expected path.',
+        );
       }
       _addMessage('User response in: $path', true);
       _deleteFile(path);
