@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:chat_bubbles/chat_bubbles.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:progress_bar_countdown/progress_bar_countdown.dart';
 import 'package:record/record.dart';
@@ -243,7 +245,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         _showErrorAndReturnToStartScreen(
           'Recording failed to stop properly. No file path returned.',
         );
-        return; // never called but this line need to prevent compiler warning about path being potentially null
+        return; // never called but this line needed to prevent compiler warning about path being potentially null
       } else if (path != _audioFilePath) {
         _deleteFile(_audioFilePath);
         _showErrorAndReturnToStartScreen(
@@ -251,10 +253,32 @@ class _ActivityScreenState extends State<ActivityScreen> {
         );
       }
       _addMessage('User response in: $path', true);
-      _deleteFile(path);
+
+      _uploadUserResponseAudio(path)
+          .then((downloadUrl) {
+            _addMessage('Uploaded audio URL: $downloadUrl', false);
+          })
+          .catchError((error) {
+            _addMessage('Failed to upload audio: $error', false);
+          });
+
+      //TODO _deleteFile(path);
       _addMessage('Question?', false);
     }
     _restartTimer();
+  }
+
+  Future<String> _uploadUserResponseAudio(String filePath) async {
+    // Normalize to platform-correct separators
+    final normalizedPath = p.normalize(filePath);
+    final file = File(normalizedPath);
+
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
+    final storagePath = 'transcriptions/es/$fileName';
+    final storageRef = FirebaseStorage.instance.ref(storagePath);
+
+    await storageRef.putFile(file, SettableMetadata(contentType: 'audio/wav'));
+    return await storageRef.getDownloadURL();
   }
 }
 
