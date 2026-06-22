@@ -232,53 +232,48 @@ class _ActivityScreenState extends State<ActivityScreen> {
   Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
     if (isWaiting) {
       if (await _recorder.hasPermission()) {
-        _audioFilePath = await _getTempRecordingPath();
+        _audioFilePath = p.normalize(await _getTempRecordingPath());
         await _recorder.start(_recordConfig, path: _audioFilePath);
       } else {
         _showErrorAndReturnToStartScreen(
           'Microphone permission denied. Cannot start recording.',
         );
+        return;
       }
     } else {
-      final path = await _recorder.stop();
-      if (path == null) {
+      final recordedPath = await _recorder.stop();
+      if (recordedPath == null) {
         _showErrorAndReturnToStartScreen(
           'Recording failed to stop properly. No file path returned.',
         );
-        return; // never called but this line needed to prevent compiler warning about path being potentially null
-      } else if (path != _audioFilePath) {
+        return;
+      }
+      final normalizedRecordedPath = p.normalize(recordedPath);
+
+      if (normalizedRecordedPath != _audioFilePath) {
+        _deleteFile(normalizedRecordedPath);
         _deleteFile(_audioFilePath);
         _showErrorAndReturnToStartScreen(
-          'Warning: Recorded file path does not match expected path.',
+          'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
         );
+        return;
       }
-      _addMessage('User response in: $path', true);
-
-      _uploadUserResponseAudio(path)
-          .then((downloadUrl) {
-            _addMessage('Uploaded audio URL: $downloadUrl', false);
-          })
-          .catchError((error) {
-            _addMessage('Failed to upload audio: $error', false);
-          });
-
-      //TODO _deleteFile(path);
+      _uploadUserResponseAudio(normalizedRecordedPath);
       _addMessage('Question?', false);
     }
     _restartTimer();
   }
 
-  Future<String> _uploadUserResponseAudio(String filePath) async {
-    // Normalize to platform-correct separators
-    final normalizedPath = p.normalize(filePath);
-    final file = File(normalizedPath);
+  Future<void> _uploadUserResponseAudio(String path) async {
+    
+    final file = File(path);
 
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
     final storagePath = 'transcriptions/es/$fileName';
     final storageRef = FirebaseStorage.instance.ref(storagePath);
 
     await storageRef.putFile(file, SettableMetadata(contentType: 'audio/wav'));
-    return await storageRef.getDownloadURL();
+    _deleteFile(path); // Clean up temporary file after upload
   }
 }
 
