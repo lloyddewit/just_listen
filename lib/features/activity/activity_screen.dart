@@ -265,15 +265,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Future<void> _uploadUserResponseAudio(String path) async {
-    
-    final file = File(path);
+    try {
+      final file = File(path);
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
+      final storagePath = 'transcriptions/es/$fileName';
+      final storageRef = FirebaseStorage.instance.ref(storagePath);
 
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
-    final storagePath = 'transcriptions/es/$fileName';
-    final storageRef = FirebaseStorage.instance.ref(storagePath);
-
-    await storageRef.putFile(file, SettableMetadata(contentType: 'audio/wav'));
-    _deleteFile(path); // Clean up temporary file after upload
+      await storageRef.putFile(
+        file,
+        SettableMetadata(contentType: 'audio/wav'),
+      );
+      _deleteFile(path); // Clean up temporary file after upload
+    } catch (e) {
+      _showErrorAndReturnToStartScreen('Failed to upload audio: $e');
+      return;
+    }
   }
 }
 
