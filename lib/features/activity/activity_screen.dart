@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -171,11 +172,26 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
   }
 
-  void _deleteFile(String path) async {
+  Future<void> _deleteFile(String path) async {
     final file = File(path);
-    if (await file.exists()) {
-      await file.delete();
+    if (!await file.exists()) return;
+
+    const maxDuration = Duration(seconds: 10);
+    const checkInterval = Duration(milliseconds: 500);
+    final startTime = DateTime.now();
+
+    while (DateTime.now().difference(startTime) < maxDuration) {
+      try {
+        await file.delete();
+        return; // Success
+      } on PathAccessException catch (_) {
+        // File still locked, wait and retry
+        await Future.delayed(checkInterval);
+      }
     }
+
+    // Timeout reached — log and continue
+    print('Failed to delete file after ${maxDuration.inSeconds} seconds: $path');
   }
 
   Future<String> _getTempRecordingPath() async {
@@ -275,11 +291,48 @@ class _ActivityScreenState extends State<ActivityScreen> {
         file,
         SettableMetadata(contentType: 'audio/wav'),
       );
-      _deleteFile(path); // Clean up temporary file after upload
+      _deleteFile(path);
+
+      // Read the transcription file created by the extension
+      await _readTranscription(storagePath);
     } catch (e) {
       _showErrorAndReturnToStartScreen('Failed to upload audio: $e');
       return;
     }
+  }
+
+  Future<String?> _readTranscription(String storagePath) async {
+    final transcriptionPath = '$storagePath.wav_transcription.txt';
+    final transcriptionRef = FirebaseStorage.instance.ref(transcriptionPath);
+
+    const maxDuration = Duration(seconds: 20);
+    const checkInterval = Duration(milliseconds: 500);
+    final startTime = DateTime.now();
+
+    while (DateTime.now().difference(startTime) < maxDuration) {
+      try {
+        final bytes = await transcriptionRef.getData();
+        if (bytes != null) {
+          final jsonString = utf8.decode(bytes);
+
+          // Parse JSON and extract transcript
+          final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+          final transcript =
+              jsonMap['results'][0]['alternatives'][0]['transcript'] as String;
+
+          print(
+            '${DateTime.now().difference(startTime)} Transcript: $transcript',
+          );
+          return transcript;
+        }
+      } catch (e) {
+        // File not available yet, wait and retry
+        await Future.delayed(checkInterval);
+      }
+    }
+
+    print('Transcription not available after ${maxDuration.inSeconds} seconds');
+    return null;
   }
 }
 
