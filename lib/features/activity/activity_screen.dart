@@ -191,7 +191,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
 
     // Timeout reached — log and continue
-    print('Failed to delete file after ${maxDuration.inSeconds} seconds: $path');
+    print(
+      'Failed to delete file after ${maxDuration.inSeconds} seconds: $path',
+    );
   }
 
   Future<String> _getTempRecordingPath() async {
@@ -315,18 +317,26 @@ class _ActivityScreenState extends State<ActivityScreen> {
         if (bytes != null) {
           final jsonString = utf8.decode(bytes);
 
-          // Parse JSON and extract transcript
-          final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-          final transcript =
-              jsonMap['results'][0]['alternatives'][0]['transcript'] as String;
+          // Parse JSON and extract transcript - fail fast on parse/shape errors
+          try {
+            final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+            final transcript =
+                jsonMap['results'][0]['alternatives'][0]['transcript']
+                    as String;
 
-          print(
-            '${DateTime.now().difference(startTime)} Transcript: $transcript',
-          );
-          return transcript;
+            print(
+              '${DateTime.now().difference(startTime)} Transcript: $transcript',
+            );
+            return transcript;
+          } catch (parseError) {
+            print(
+              'Failed to parse transcription JSON or extract transcript: $parseError',
+            );
+            return null;
+          }
         }
       } catch (e) {
-        // File not available yet, wait and retry
+        // File not available yet (e.g., not found), wait and retry
         await Future.delayed(checkInterval);
       }
     }
