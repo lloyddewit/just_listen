@@ -13,7 +13,7 @@ dependencies:
   
   chat_bubbles: ^1.10.0
   cupertino_icons: ^1.0.8
-  firebase_auth: ^6.4.0
+  firebase_auth: ^6.5.3
   firebase_core: ^4.11.0
   firebase_storage: ^13.4.3
   firebase_ui_auth: ^3.0.1
