@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:chat_bubbles/chat_bubbles.dart';
@@ -101,8 +102,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 height: 8.0,
                 hideText: true,
                 initialDuration: Duration(seconds: _isWaiting ? 3 : 10),
-                onComplete: () {
-                  _toggleWaitSpeakMode(_isWaiting);
+                onComplete: () async {
+                  await _toggleWaitSpeakMode(_isWaiting);
                 },
                 progressBackgroundColor: _isWaiting
                     ? progressBarLightColor
@@ -113,8 +114,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                _toggleWaitSpeakMode(_isWaiting);
+              onPressed: () async {
+                await _toggleWaitSpeakMode(_isWaiting);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isWaiting
@@ -146,13 +147,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   @override
   Future<void> dispose() async {
-    _deleteFile(_audioFilePath);
+    unawaited(_deleteFile(_audioFilePath));
 
     // Commented out because ProgressBarCountdownController does not implement dispose()
     //_progressBarController.dispose();
 
     _scrollController.dispose();
-    _recorder.dispose();
+    unawaited(_recorder.dispose());
     super.dispose();
   }
 
@@ -163,10 +164,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
+        unawaited(
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          ),
         );
       }
     });
@@ -182,7 +185,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
     while (DateTime.now().difference(startTime) < maxDuration) {
       try {
-        await file.delete();
+        unawaited(file.delete());
         return; // Success
       } on PathAccessException catch (_) {
         // File still locked, wait and retry
@@ -221,86 +224,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
       _progressBarController.reset(duration: Duration(seconds: duration));
       _progressBarController.start();
     });
-  }
-
-  Future<void> _showErrorAndReturnToStartScreen(String message) async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false, // force explicit confirmation
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Something went wrong'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(); // close dialog
-              Navigator.of(dialogContext).popUntil(
-                // return to start
-                ModalRoute.withName('/'),
-              );
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
-    if (isWaiting) {
-      if (await _recorder.hasPermission()) {
-        _audioFilePath = p.normalize(await _getTempRecordingPath());
-        await _recorder.start(_recordConfig, path: _audioFilePath);
-      } else {
-        _showErrorAndReturnToStartScreen(
-          'Microphone permission denied. Cannot start recording.',
-        );
-        return;
-      }
-    } else {
-      final recordedPath = await _recorder.stop();
-      if (recordedPath == null) {
-        _showErrorAndReturnToStartScreen(
-          'Recording failed to stop properly. No file path returned.',
-        );
-        return;
-      }
-      final normalizedRecordedPath = p.normalize(recordedPath);
-
-      if (normalizedRecordedPath != _audioFilePath) {
-        _deleteFile(normalizedRecordedPath);
-        _deleteFile(_audioFilePath);
-        _showErrorAndReturnToStartScreen(
-          'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
-        );
-        return;
-      }
-      _uploadUserResponseAudio(normalizedRecordedPath);
-      _addMessage('Question?', false);
-    }
-    _restartTimer();
-  }
-
-  Future<void> _uploadUserResponseAudio(String path) async {
-    try {
-      final file = File(path);
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
-      final storagePath = 'transcriptions/es/$fileName';
-      final storageRef = FirebaseStorage.instance.ref(storagePath);
-
-      await storageRef.putFile(
-        file,
-        SettableMetadata(contentType: 'audio/wav'),
-      );
-      _deleteFile(path);
-
-      // Read the transcription file created by the extension
-      await _readTranscription(storagePath);
-    } catch (e) {
-      _showErrorAndReturnToStartScreen('Failed to upload audio: $e');
-      return;
-    }
   }
 
   Future<String?> _readTranscription(String storagePath) async {
@@ -343,6 +266,86 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
     print('Transcription not available after ${maxDuration.inSeconds} seconds');
     return null;
+  }
+
+  Future<void> _showErrorAndReturnToStartScreen(String message) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false, // force explicit confirmation
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Something went wrong'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // close dialog
+              Navigator.of(dialogContext).popUntil(
+                // return to start
+                ModalRoute.withName('/'),
+              );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
+    if (isWaiting) {
+      if (await _recorder.hasPermission()) {
+        _audioFilePath = p.normalize(await _getTempRecordingPath());
+        await _recorder.start(_recordConfig, path: _audioFilePath);
+      } else {
+        await _showErrorAndReturnToStartScreen(
+          'Microphone permission denied. Cannot start recording.',
+        );
+        return;
+      }
+    } else {
+      final recordedPath = await _recorder.stop();
+      if (recordedPath == null) {
+        await _showErrorAndReturnToStartScreen(
+          'Recording failed to stop properly. No file path returned.',
+        );
+        return;
+      }
+      final normalizedRecordedPath = p.normalize(recordedPath);
+
+      if (normalizedRecordedPath != _audioFilePath) {
+        unawaited(_deleteFile(normalizedRecordedPath));
+        unawaited(_deleteFile(_audioFilePath));
+        await _showErrorAndReturnToStartScreen(
+          'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
+        );
+        return;
+      }
+      unawaited(_uploadUserResponseAudio(normalizedRecordedPath));
+      _addMessage('Question?', false);
+    }
+    _restartTimer();
+  }
+
+  Future<void> _uploadUserResponseAudio(String path) async {
+    try {
+      final file = File(path);
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
+      final storagePath = 'transcriptions/es/$fileName';
+      final storageRef = FirebaseStorage.instance.ref(storagePath);
+
+      await storageRef.putFile(
+        file,
+        SettableMetadata(contentType: 'audio/wav'),
+      );
+      unawaited(_deleteFile(path));
+
+      // Read the transcription file created by the extension
+      await _readTranscription(storagePath);
+    } catch (e) {
+      await _showErrorAndReturnToStartScreen('Failed to upload audio: $e');
+      return;
+    }
   }
 }
 
