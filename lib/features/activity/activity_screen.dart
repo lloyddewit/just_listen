@@ -194,7 +194,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
 
     // Timeout reached — log and continue
-    print(
+    await _showErrorAndReturnToStartScreen(
       'Failed to delete file after ${maxDuration.inSeconds} seconds: $path',
     );
   }
@@ -246,13 +246,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
             final transcript =
                 jsonMap['results'][0]['alternatives'][0]['transcript']
                     as String;
-
-            print(
-              '${DateTime.now().difference(startTime)} Transcript: $transcript',
-            );
             return transcript;
           } catch (parseError) {
-            print(
+            await _showErrorAndReturnToStartScreen(
               'Failed to parse transcription JSON or extract transcript: $parseError',
             );
             return null;
@@ -264,7 +260,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
       }
     }
 
-    print('Transcription not available after ${maxDuration.inSeconds} seconds');
+    await _showErrorAndReturnToStartScreen(
+      'Transcription not available after ${maxDuration.inSeconds} seconds',
+    );
     return null;
   }
 
