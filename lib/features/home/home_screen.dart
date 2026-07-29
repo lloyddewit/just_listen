@@ -32,8 +32,8 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 16),
 
             IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
+              onPressed: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const ActivityScreen(),
                   ),

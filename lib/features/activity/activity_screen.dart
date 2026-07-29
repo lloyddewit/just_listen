@@ -28,6 +28,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       ProgressBarCountdownController();
   final ScrollController _scrollController = ScrollController();
   bool _isWaiting = true;
+  bool _isToggling = false;
 
   final _recorder = AudioRecorder();
 
@@ -246,10 +247,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
             final transcript =
                 jsonMap['results'][0]['alternatives'][0]['transcript']
                     as String;
+            //todo: just for temp debugging, print the transcript to console
+            debugPrint('Transcription result: $transcript');
             return transcript;
           } catch (parseError) {
             await _showErrorAndReturnToStartScreen(
-              'Failed to parse transcription JSON or extract transcript: $parseError',
+              'Could not transcribe any text from recording: $parseError',
             );
             return null;
           }
@@ -268,6 +271,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   Future<void> _showErrorAndReturnToStartScreen(String message) async {
     if (!mounted) return;
+    _progressBarController.pause();
     await showDialog<void>(
       context: context,
       barrierDismissible: false, // force explicit confirmation
@@ -290,59 +294,92 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
-  Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
-    if (isWaiting) {
-      if (await _recorder.hasPermission()) {
-        _audioFilePath = p.normalize(await _getTempRecordingPath());
-        await _recorder.start(_recordConfig, path: _audioFilePath);
-      } else {
-        await _showErrorAndReturnToStartScreen(
-          'Microphone permission denied. Cannot start recording.',
-        );
-        return;
-      }
-    } else {
-      final recordedPath = await _recorder.stop();
-      if (recordedPath == null) {
-        await _showErrorAndReturnToStartScreen(
-          'Recording failed to stop properly. No file path returned.',
-        );
-        return;
-      }
-      final normalizedRecordedPath = p.normalize(recordedPath);
-
-      if (normalizedRecordedPath != _audioFilePath) {
-        unawaited(_deleteFile(normalizedRecordedPath));
-        unawaited(_deleteFile(_audioFilePath));
-        await _showErrorAndReturnToStartScreen(
-          'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
-        );
-        return;
-      }
-      unawaited(_uploadUserResponseAudio(normalizedRecordedPath));
-      _addMessage('Question?', false);
+  //todo
+  Future<void> _startRecording() async {
+    if (!(await _recorder.hasPermission())) {
+      await _showErrorAndReturnToStartScreen(
+        'Microphone permission denied. Cannot start recording.',
+      );
+      return;
     }
-    _restartTimer();
+    _audioFilePath = p.normalize(await _getTempRecordingPath());
+    await _recorder.start(_recordConfig, path: _audioFilePath);
   }
 
-  Future<void> _uploadUserResponseAudio(String path) async {
+  Future<String?> _stopRecording() async {
+    final recordedPath = await _recorder.stop();
+    if (recordedPath == null) {
+      await _showErrorAndReturnToStartScreen(
+        'Recording failed to stop properly. No file path returned.',
+      );
+      return null;
+    }
+
+    final normalizedRecordedPath = p.normalize(recordedPath);
+    if (normalizedRecordedPath != _audioFilePath) {
+      unawaited(_deleteFile(normalizedRecordedPath));
+      unawaited(_deleteFile(_audioFilePath));
+      await _showErrorAndReturnToStartScreen(
+        'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
+      );
+      return null;
+    }
+    if (!File(normalizedRecordedPath).existsSync()) {
+      await _showErrorAndReturnToStartScreen(
+        'Recorded file does not exist at expected path: $normalizedRecordedPath',
+      );
+      return null;
+    }
+
+    return normalizedRecordedPath;
+  }
+
+  Future<void> _toggleWaitSpeakMode(bool isWaiting) async {
+    if (!mounted || _isToggling) {
+      return;
+    }
+    _isToggling = true;
+
+    if (isWaiting) {
+      await _startRecording();
+      _isToggling = false;
+      _restartTimer();
+    } else {
+      _addMessage('Question?', false);
+      final String? normalizedRecordedPath = await _stopRecording();
+      _isToggling = false;
+      if (normalizedRecordedPath == null) {
+        return;
+      }
+      _restartTimer(); // restart timer now, else user perceives delay
+      final String? storagePath = await _uploadUserResponseAudio(
+        normalizedRecordedPath,
+      );
+      //todo _readTranscription only called to create debug message and ensure transcription worked
+      if (storagePath == null) {
+        return;
+      }
+      unawaited(_readTranscription(storagePath));
+    }
+  }
+
+  Future<String?> _uploadUserResponseAudio(String path) async {
     try {
-      final file = File(path);
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.wav';
       final storagePath = 'transcriptions/es/$fileName';
       final storageRef = FirebaseStorage.instance.ref(storagePath);
 
+      final file = File(path);
       await storageRef.putFile(
         file,
         SettableMetadata(contentType: 'audio/wav'),
       );
       unawaited(_deleteFile(path));
 
-      // Read the transcription file created by the extension
-      await _readTranscription(storagePath);
+      return storagePath;
     } catch (e) {
       await _showErrorAndReturnToStartScreen('Failed to upload audio: $e');
-      return;
+      return null;
     }
   }
 }
