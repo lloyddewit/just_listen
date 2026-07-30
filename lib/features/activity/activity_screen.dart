@@ -124,9 +124,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  await _toggleWaitSpeakMode(_isWaiting);
-                },
+                onPressed: _isToggling
+                    ? null
+                    : () async {
+                        await _toggleWaitSpeakMode(_isWaiting);
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isWaiting
                       ? startButtonColor
@@ -358,16 +360,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
     if (!mounted || _isToggling) {
       return;
     }
-    _isToggling = true;
+    setState(() => _isToggling = true);
 
     if (isWaiting) {
       await _startRecording();
-      _isToggling = false;
+      setState(() => _isToggling = false);
       _restartTimer();
     } else {
       _addMessage('Question?', false);
       final String? normalizedRecordedPath = await _stopRecording();
-      _isToggling = false;
+      setState(() => _isToggling = false);
       if (normalizedRecordedPath == null) {
         return;
       }
