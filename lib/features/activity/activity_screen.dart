@@ -19,7 +19,22 @@ class ActivityScreen extends StatefulWidget {
 }
 
 class _ActivityScreenState extends State<ActivityScreen> {
+  // Timing
+  static const int _prepSeconds = 3;
+  static const int _speakSeconds = 10;
+  static const int _transcriptionTimeoutSeconds = 20;
+  static const int _pollIntervalMs = 500;
+  static const int _scrollAnimationMs = 250;
+
+  // Layout
+  static const double _progressBarHeight = 8.0;
+  static const double _buttonSize = 48.0;
+  static const double _iconSizeStart = 40.0;
+  static const double _iconSizeStop = 28.0;
+
   String _audioFilePath = "";
+  bool _isWaiting = true;
+  bool _isToggling = false;
 
   final List<_Message> _messages = [
     _Message(text: 'Question1?', isUser: false),
@@ -27,10 +42,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
   final ProgressBarCountdownController _progressBarController =
       ProgressBarCountdownController();
   final ScrollController _scrollController = ScrollController();
-  bool _isWaiting = true;
-  bool _isToggling = false;
-
-  final _recorder = AudioRecorder();
 
   // Recording config optimized for speech recognition
   final _recordConfig = RecordConfig(
@@ -41,6 +52,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     echoCancel: true,
     noiseSuppress: true,
   );
+  final AudioRecorder _recorder = AudioRecorder();
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +121,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   countdownDirection: _isWaiting
                       ? ProgressBarCountdownAlignment.left
                       : ProgressBarCountdownAlignment.right,
-                  height: 8.0,
+                  height: _progressBarHeight,
                   hideText: true,
-                  initialDuration: Duration(seconds: _isWaiting ? 3 : 10),
+                  initialDuration: Duration(
+                    seconds: _isWaiting ? _prepSeconds : _speakSeconds,
+                  ),
                   onComplete: () async {
                     await _toggleWaitSpeakMode(_isWaiting);
                   },
@@ -134,12 +148,12 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       ? startButtonColor
                       : Colors.red.shade800,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  minimumSize: const Size(48, 48),
+                  minimumSize: const Size(_buttonSize, _buttonSize),
                   shape: const CircleBorder(),
                 ),
                 child: _isWaiting
-                    ? const Icon(Icons.arrow_right, size: 40.0)
-                    : const Icon(Icons.stop, size: 28.0),
+                    ? const Icon(Icons.arrow_right, size: _iconSizeStart)
+                    : const Icon(Icons.stop, size: _iconSizeStop),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 6.0),
@@ -177,7 +191,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
         unawaited(
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: _scrollAnimationMs),
             curve: Curves.easeOut,
           ),
         );
@@ -190,8 +204,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final file = File(path);
     if (!await file.exists()) return;
 
-    const maxDuration = Duration(seconds: 10);
-    const checkInterval = Duration(milliseconds: 500);
+    const maxDuration = Duration(seconds: _transcriptionTimeoutSeconds);
+    const checkInterval = Duration(milliseconds: _pollIntervalMs);
     final startTime = DateTime.now();
 
     while (DateTime.now().difference(startTime) < maxDuration) {
@@ -244,7 +258,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
     // Capture the duration at call time, not callback time (i.e. outside addPostFrameCallback)
     // See: https://github.com/lloyddewit/just_listen/pull/5 09/06/26 comment.
-    final duration = _isWaiting ? 3 : 10;
+    final duration = _isWaiting ? _prepSeconds : _speakSeconds;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -257,8 +271,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final transcriptionPath = '$storagePath.wav_transcription.txt';
     final transcriptionRef = FirebaseStorage.instance.ref(transcriptionPath);
 
-    const maxDuration = Duration(seconds: 20);
-    const checkInterval = Duration(milliseconds: 500);
+    const maxDuration = Duration(seconds: _transcriptionTimeoutSeconds);
+    const checkInterval = Duration(milliseconds: _pollIntervalMs);
     final startTime = DateTime.now();
 
     while (DateTime.now().difference(startTime) < maxDuration) {
@@ -345,7 +359,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
     if (normalizedRecordedPath != _audioFilePath) {
       unawaited(_deleteFile(normalizedRecordedPath));
       unawaited(_deleteFile(_audioFilePath));
-      debugPrint('Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).');
+      debugPrint(
+        'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
+      );
       return null;
     }
     if (!File(normalizedRecordedPath).existsSync()) {
