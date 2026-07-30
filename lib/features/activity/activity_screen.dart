@@ -269,15 +269,18 @@ class _ActivityScreenState extends State<ActivityScreen> {
           // Parse JSON and extract transcript - fail fast on parse/shape errors
           try {
             final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-            final transcript =
-                jsonMap['results'][0]['alternatives'][0]['transcript']
-                    as String;
+            final results = jsonMap['results'] as List?;
+            final first = results?.firstOrNull as Map<String, dynamic>?;
+            final alternatives = first?['alternatives'] as List?;
+            final String transcript =
+                (alternatives?.firstOrNull?['transcript'] as String?) ??
+                'No transcript found.';
             //todo: just for temp debugging, print the transcript to console
             debugPrint('Transcription result: $transcript');
             return transcript;
           } catch (parseError) {
             await _showErrorAndReturnToStartScreen(
-              'Could not transcribe any text from recording: $parseError',
+              'Error transcribing text from recording: $parseError',
             );
             return null;
           }
