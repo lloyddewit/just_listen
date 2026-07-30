@@ -186,6 +186,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Future<void> _deleteFile(String path) async {
+    if (path.isEmpty) return;
     final file = File(path);
     if (!await file.exists()) return;
 
@@ -204,7 +205,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
 
     // Timeout reached — log and continue
-    await _showErrorAndReturnToStartScreen(
+    debugPrint(
       'Failed to delete file after ${maxDuration.inSeconds} seconds: $path',
     );
   }
@@ -291,8 +292,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
       }
     }
 
-    await _showErrorAndReturnToStartScreen(
-      'Transcription not available after ${maxDuration.inSeconds} seconds',
+    debugPrint(
+      'Warning: Transcription not available after ${maxDuration.inSeconds} seconds',
     );
     return null;
   }
@@ -332,7 +333,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   Future<String?> _stopRecording() async {
-    final recordedPath = await _recorder.stop();
+    final String? recordedPath = await _recorder.stop();
     if (recordedPath == null) {
       await _showErrorAndReturnToStartScreen(
         'Recording failed to stop properly. No file path returned.',
@@ -344,9 +345,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     if (normalizedRecordedPath != _audioFilePath) {
       unawaited(_deleteFile(normalizedRecordedPath));
       unawaited(_deleteFile(_audioFilePath));
-      await _showErrorAndReturnToStartScreen(
-        'Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).',
-      );
+      debugPrint('Warning: Recorded file path ($normalizedRecordedPath) does not match expected path ($_audioFilePath).');
       return null;
     }
     if (!File(normalizedRecordedPath).existsSync()) {
