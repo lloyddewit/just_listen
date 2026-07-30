@@ -58,103 +58,110 @@ class _ActivityScreenState extends State<ActivityScreen> {
         .toColor();
 
     return Scaffold(
-      appBar: AppBar(leading: const BackButton()),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: _messages.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: BubbleSpecialOne(
-                    tail: true,
-                    text: _messages[index].text,
-                    isSender: _messages[index].isUser,
-                    color: _messages[index].isUser
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+      appBar: AppBar(
+        leading: BackButton(onPressed: () async => await _leaveScreen()),
+      ),
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop) await _leaveScreen();
+        },
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: BubbleSpecialOne(
+                      tail: true,
+                      text: _messages[index].text,
+                      isSender: _messages[index].isUser,
+                      color: _messages[index].isUser
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Text(
-              _isWaiting ? ' Get ready to speak ...' : '  Speak now!',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                top: 9,
-                bottom: 12.0,
-                left: 12.0,
-                right: 12.0,
-              ),
-              child: ProgressBarCountdown(
-                autoStart: true,
-                controller: _progressBarController,
-                countdownDirection: _isWaiting
-                    ? ProgressBarCountdownAlignment.left
-                    : ProgressBarCountdownAlignment.right,
-                height: 8.0,
-                hideText: true,
-                initialDuration: Duration(seconds: _isWaiting ? 3 : 10),
-                onComplete: () async {
-                  await _toggleWaitSpeakMode(_isWaiting);
-                },
-                progressBackgroundColor: _isWaiting
-                    ? progressBarLightColor
-                    : progressBarDarkColor,
-                progressColor: _isWaiting
-                    ? progressBarDarkColor
-                    : progressBarLightColor,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await _toggleWaitSpeakMode(_isWaiting);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isWaiting
-                    ? startButtonColor
-                    : Colors.red.shade800,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                minimumSize: const Size(48, 48),
-                shape: const CircleBorder(),
-              ),
-              child: _isWaiting
-                  ? const Icon(Icons.arrow_right, size: 40.0)
-                  : const Icon(Icons.stop, size: 28.0),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6.0),
-              child: Text(
-                _isWaiting ? 'Start now' : 'Stop now',
+              Text(
+                _isWaiting ? ' Get ready to speak ...' : '  Speak now!',
                 style: TextStyle(
-                  fontSize: 14.0,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 9,
+                  bottom: 12.0,
+                  left: 12.0,
+                  right: 12.0,
+                ),
+                child: ProgressBarCountdown(
+                  autoStart: true,
+                  controller: _progressBarController,
+                  countdownDirection: _isWaiting
+                      ? ProgressBarCountdownAlignment.left
+                      : ProgressBarCountdownAlignment.right,
+                  height: 8.0,
+                  hideText: true,
+                  initialDuration: Duration(seconds: _isWaiting ? 3 : 10),
+                  onComplete: () async {
+                    await _toggleWaitSpeakMode(_isWaiting);
+                  },
+                  progressBackgroundColor: _isWaiting
+                      ? progressBarLightColor
+                      : progressBarDarkColor,
+                  progressColor: _isWaiting
+                      ? progressBarDarkColor
+                      : progressBarLightColor,
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await _toggleWaitSpeakMode(_isWaiting);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isWaiting
+                      ? startButtonColor
+                      : Colors.red.shade800,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  minimumSize: const Size(48, 48),
+                  shape: const CircleBorder(),
+                ),
+                child: _isWaiting
+                    ? const Icon(Icons.arrow_right, size: 40.0)
+                    : const Icon(Icons.stop, size: 28.0),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: Text(
+                  _isWaiting ? 'Start now' : 'Stop now',
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   @override
-  Future<void> dispose() async {
-    unawaited(_deleteFile(_audioFilePath));
-
+  void dispose() {
     // Commented out because ProgressBarCountdownController does not implement dispose()
     //_progressBarController.dispose();
 
     _scrollController.dispose();
-    unawaited(_recorder.dispose());
     super.dispose();
   }
 
@@ -186,7 +193,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
     while (DateTime.now().difference(startTime) < maxDuration) {
       try {
-        unawaited(file.delete());
+        await file.delete();
         return; // Success
       } on PathAccessException catch (_) {
         // File still locked, wait and retry
@@ -208,6 +215,22 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
     final tempDir = await getTemporaryDirectory();
     return '${tempDir.path}/voice_recording_${Uuid().v4()}.wav';
+  }
+
+  Future<void> _leaveScreen() async {
+    _progressBarController.pause();
+
+    // Stop recording if still active
+    if (await _recorder.isRecording()) {
+      await _recorder.stop();
+    }
+
+    await _recorder.dispose();
+    await _deleteFile(_audioFilePath);
+
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   void _restartTimer() {
@@ -280,12 +303,9 @@ class _ActivityScreenState extends State<ActivityScreen> {
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(); // close dialog
-              Navigator.of(dialogContext).popUntil(
-                // return to start
-                ModalRoute.withName('/'),
-              );
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await _leaveScreen();
             },
             child: const Text('OK'),
           ),
